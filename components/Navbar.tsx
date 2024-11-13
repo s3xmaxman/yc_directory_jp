@@ -1,5 +1,5 @@
 import Link from "next/link";
-import React, { use } from "react";
+import React from "react";
 import Image from "next/image";
 import { auth, signOut, signIn } from "@/auth";
 
@@ -18,28 +18,29 @@ const Navbar = async () => {
                 <span>Create</span>
               </Link>
 
-              <button
-                onClick={async () => {
+              <form
+                action={async () => {
                   "use server";
                   await signOut();
                 }}
               >
-                <span>Logout</span>
-              </button>
+                <button type="submit">Logout</button>
+              </form>
 
               <Link href={`/user/${session?.id}`}>
                 <span>{session?.user?.name}</span>
               </Link>
             </>
           ) : (
-            <button
-              onClick={async () => {
+            <form
+              action={async () => {
                 "use server";
-                await signIn();
+
+                await signIn("github");
               }}
             >
-              <span>Login</span>
-            </button>
+              <button type="submit">Login</button>
+            </form>
           )}
         </div>
       </nav>
