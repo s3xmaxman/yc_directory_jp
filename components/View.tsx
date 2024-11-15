@@ -5,6 +5,16 @@ import { STARTUP_VIEWS_QUERY } from "@/sanity/lib/queries";
 import { unstable_after as after } from "next/server";
 import { writeClient } from "@/sanity/lib/write-client";
 
+/**
+ * スタートアップの閲覧数を表示し、Sanityデータベース内の閲覧数を
+ * インクリメントするコンポーネント。
+ *
+ * @param {string} id 閲覧数を取得するスタートアップのID。
+ *
+ * @returns 閲覧数を表示し、閲覧数の増加を示す小さな
+ * パルスアニメーションを伴うコンポーネント。
+ */
+
 const View = async ({ id }: { id: string }) => {
   const { views: totalViews } = await client
     .withConfig({
