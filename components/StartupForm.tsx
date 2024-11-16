@@ -7,6 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Send } from "lucide-react";
+import { formSchema } from "@/lib/validation";
+import { z } from "zod";
+import { createPitch } from "@/lib/actions";
 
 const StartupForm = () => {
   const [error, setError] = useState<Record<string, string>>({});
@@ -14,14 +17,76 @@ const StartupForm = () => {
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleSubmit = async () => {};
+  /**
+   * スタートアップのピッチ情報をサブミットし、バリデーションとデータ保存を行う
+   * @param prev - 前回のフォーム状態
+   * @param formData - フォームから送信されたデータ
+   * @returns 処理結果を含むオブジェクト
+   *   - status: 'SUCCESS' | 'ERROR' - 処理の成否
+   *   - _id: string - 作成されたピッチのID（成功時）
+   *   - error: string - エラーメッセージ（エラー時）
+   * @throws {z.ZodError} フォームデータのバリデーションエラー
+   */
+  const handleSubmit = async (prev: any, formData: FormData) => {
+    try {
+      const formValues = {
+        title: formData.get("title") as string,
+        description: formData.get("description") as string,
+        category: formData.get("category") as string,
+        link: formData.get("link") as string,
+        pitch,
+      };
+
+      await formSchema.parseAsync(formValues);
+
+      const result = await createPitch(prev, formData, pitch);
+
+      if (result.status == "SUCCESS") {
+        toast({
+          title: "Success",
+          description: "Your startup pitch has been created successfully",
+        });
+
+        router.push(`/startup/${result._id}`);
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors = error.flatten().fieldErrors;
+
+        setError(fieldErrors as unknown as Record<string, string>);
+
+        toast({
+          title: "エラー",
+          description: "入力を確認して再試行してください",
+          variant: "destructive",
+        });
+
+        return { ...prev, error: "Validation failed", status: "ERROR" };
+      }
+
+      toast({
+        title: "エラー",
+        description: "予期しないエラーが発生しました",
+        variant: "destructive",
+      });
+
+      return {
+        ...prev,
+        error: "予期しないエラーが発生しました",
+        status: "ERROR",
+      };
+    }
+  };
 
   const [state, formAction, isPending] = useActionState(handleSubmit, {
     error: "",
     status: "INITIAL",
   });
+
   return (
-    <form action={() => {}} className="startup-form">
+    <form action={formAction} className="startup-form">
       <div>
         <label htmlFor="name" className="startup-form_label">
           Title
