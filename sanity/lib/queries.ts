@@ -39,8 +39,28 @@ export const STARTUP_BY_ID_QUERY =
   pitch,
 }`);
 
+/**
+ * スタートアップの閲覧数を取得するクエリ
+ * @description 指定されたIDのスタートアップの_idとviews数を取得します
+ */
 export const STARTUP_VIEWS_QUERY = defineQuery(`
   *[_type == "startup" && _id == $id][0]{
       _id, views
+  }
+`);
+
+/**
+ * GitHub IDに基づいて著者情報を取得するクエリ
+ * @description 指定されたGitHub IDに一致する著者の詳細情報を取得します
+ */
+export const AUTHOR_BY_GITHUB_ID_QUERY = defineQuery(`
+  *[_type == "author" && id == $id][0]{
+      _id,
+      id,
+      name,
+      username,
+      email,
+      image,
+      bio
   }
 `);
