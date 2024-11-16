@@ -1,34 +1,32 @@
 "use client";
-import React, { useActionState, useState } from "react";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
+
+import React, { useState, useActionState } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import MDEditor from "@uiw/react-md-editor";
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { formSchema } from "@/lib/validation";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 import { createPitch } from "@/lib/actions";
 
 const StartupForm = () => {
-  const [error, setError] = useState<Record<string, string>>({});
-  const [pitch, setPitch] = useState<string>("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pitch, setPitch] = useState("");
   const { toast } = useToast();
   const router = useRouter();
 
   /**
-   * スタートアップのピッチ情報をサブミットし、バリデーションとデータ保存を行う
-   * @param prev - 前回のフォーム状態
-   * @param formData - フォームから送信されたデータ
-   * @returns 処理結果を含むオブジェクト
-   *   - status: 'SUCCESS' | 'ERROR' - 処理の成否
-   *   - _id: string - 作成されたピッチのID（成功時）
-   *   - error: string - エラーメッセージ（エラー時）
-   * @throws {z.ZodError} フォームデータのバリデーションエラー
+   * フォームの送信を処理する非同期関数
+   * @param prevState - 前の状態
+   * @param formData - フォームデータ
+   * @returns サーバーアクションの結果
    */
-  const handleSubmit = async (prev: any, formData: FormData) => {
+  const handleFormSubmit = async (prevState: any, formData: FormData) => {
     try {
+      // フォームの値を取得
       const formValues = {
         title: formData.get("title") as string,
         description: formData.get("description") as string,
@@ -37,14 +35,17 @@ const StartupForm = () => {
         pitch,
       };
 
+      // バリデーション
       await formSchema.parseAsync(formValues);
 
-      const result = await createPitch(prev, formData, pitch);
+      // ピッチを作成
+      const result = await createPitch(prevState, formData, pitch);
 
-      if (result.status == "SUCCESS") {
+      if (result.status === "SUCCESS") {
+        // 成功時の処理
         toast({
-          title: "Success",
-          description: "Your startup pitch has been created successfully",
+          title: "成功",
+          description: "スタートアップのピッチが正常に作成されました",
         });
 
         router.push(`/startup/${result._id}`);
@@ -53,34 +54,39 @@ const StartupForm = () => {
       return result;
     } catch (error) {
       if (error instanceof z.ZodError) {
+        // バリデーションエラーの処理
         const fieldErrors = error.flatten().fieldErrors;
-
-        setError(fieldErrors as unknown as Record<string, string>);
+        setErrors(fieldErrors as unknown as Record<string, string>);
 
         toast({
           title: "エラー",
-          description: "入力を確認して再試行してください",
+          description: "入力を確認して再度お試しください",
           variant: "destructive",
         });
 
-        return { ...prev, error: "Validation failed", status: "ERROR" };
+        return {
+          ...prevState,
+          error: "バリデーションに失敗しました",
+          status: "ERROR",
+        };
       }
 
+      // 予期せぬエラーの処理
       toast({
         title: "エラー",
-        description: "予期しないエラーが発生しました",
+        description: "予期せぬエラーが発生しました",
         variant: "destructive",
       });
 
       return {
-        ...prev,
-        error: "予期しないエラーが発生しました",
+        ...prevState,
+        error: "予期せぬエラーが発生しました",
         status: "ERROR",
       };
     }
   };
 
-  const [state, formAction, isPending] = useActionState(handleSubmit, {
+  const [state, formAction, isPending] = useActionState(handleFormSubmit, {
     error: "",
     status: "INITIAL",
   });
@@ -88,7 +94,7 @@ const StartupForm = () => {
   return (
     <form action={formAction} className="startup-form">
       <div>
-        <label htmlFor="name" className="startup-form_label">
+        <label htmlFor="title" className="startup-form_label">
           Title
         </label>
         <Input
@@ -98,7 +104,8 @@ const StartupForm = () => {
           required
           placeholder="Startup Title"
         />
-        {error.title && <p className="startup-form_error">{error.title}</p>}
+
+        {errors.title && <p className="startup-form_error">{errors.title}</p>}
       </div>
 
       <div>
@@ -113,8 +120,8 @@ const StartupForm = () => {
           placeholder="Startup Description"
         />
 
-        {error.description && (
-          <p className="startup-form_error">{error.description}</p>
+        {errors.description && (
+          <p className="startup-form_error">{errors.description}</p>
         )}
       </div>
 
@@ -130,8 +137,8 @@ const StartupForm = () => {
           placeholder="Startup Category (Tech, Health, Education...)"
         />
 
-        {error.category && (
-          <p className="startup-form_error">{error.category}</p>
+        {errors.category && (
+          <p className="startup-form_error">{errors.category}</p>
         )}
       </div>
 
@@ -147,7 +154,7 @@ const StartupForm = () => {
           placeholder="Startup Image URL"
         />
 
-        {error.link && <p className="startup-form_error">{error.link}</p>}
+        {errors.link && <p className="startup-form_error">{errors.link}</p>}
       </div>
 
       <div data-color-mode="light">
@@ -170,6 +177,8 @@ const StartupForm = () => {
             disallowedElements: ["style"],
           }}
         />
+
+        {errors.pitch && <p className="startup-form_error">{errors.pitch}</p>}
       </div>
 
       <Button
@@ -177,7 +186,7 @@ const StartupForm = () => {
         className="startup-form_btn text-white"
         disabled={isPending}
       >
-        {isPending ? "Submitting..." : "Submit"}
+        {isPending ? "Submitting..." : "Submit Your Pitch"}
         <Send className="size-6 ml-2" />
       </Button>
     </form>

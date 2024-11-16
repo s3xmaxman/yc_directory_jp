@@ -5,13 +5,6 @@ import { parseServerActionResponse } from "@/lib/utils";
 import slugify from "slugify";
 import { writeClient } from "@/sanity/lib/write-client";
 
-/**
- * スタートアップのピッチを作成する非同期関数
- * @param state - 現在の状態（型は any）
- * @param form - フォームデータ
- * @param pitch - ピッチの内容
- * @returns サーバーアクションのレスポンス
- */
 export const createPitch = async (
   state: any,
   form: FormData,
@@ -21,7 +14,7 @@ export const createPitch = async (
 
   if (!session)
     return parseServerActionResponse({
-      error: "サインインしていません",
+      error: "Not signed in",
       status: "ERROR",
     });
 
